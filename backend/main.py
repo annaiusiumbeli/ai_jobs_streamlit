@@ -18,13 +18,22 @@ def home():
 @app.get('/jobs')
 def get_jobs(city: str = None):
     conn = get_db_connection()
+    try:
+        if city:
+            query = 'SELECT * FROM jobs WHERE city = ?'
+            jobs = conn.execute(query, (city,)).fetchall()
+        else:
+            jobs = conn.execute('SELECT * FROM jobs LIMIT 10').fetchall()
 
-    if city:
-        query = 'SELECT * FROM jobs WHERE city = ?'
-        jobs = conn.execute(query, (city,)).fetchall()
-    else:
-        jobs = conn.execute('SELECT * FROM jobs LIMIT 10').fetchall()
+        return [dict(row) for row in jobs]
+    finally:
+        conn.close()
 
-    conn.close()
-
-    return [dict(row) for row in jobs]
+@app.get('/cities')
+def get_cities():
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute('SELECT DISTINCT city from jobs ORDER BY city')
+        return [row['city'] for row in cursor.fetchall()]
+    finally:
+        conn.close()
