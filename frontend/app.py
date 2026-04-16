@@ -6,17 +6,30 @@ st.set_page_config(page_title='AI Jobs')
 
 st.title('Моноторинг рынка вакансий в сфере ИИ')
 
-API_URL = 'http://127.0.0.1:8000/jobs'
+BASE_URL = 'http://127.0.0.1:8000'
 
-if st.button('Загрузить данные'):
-    try:
-        response = requests.get(API_URL)
-        if response.status_code == 200:
-            jobs_data = response.json()
-            df = pd.DataFrame(jobs_data)
-            st.success(f'Успешно загружено {len(df)} вакансий.')
-            st.dataframe(df)
-        else:
-            st.error('Бэкенд ответил ошибкой')
-    except Exception as e:
-        st.error(f'Не удалось подключиться к бэкенду. Ошибка: {e}')
+try:
+    response = requests.get(f'{BASE_URL}/cities')
+    if response.status_code == 200:
+        cities = ['Все города'] + response.json()
+    else:
+        cities = ['Все города']
+except:
+    cities = ['Все города']
+
+
+selected_city = st.selectbox('Выберите город:', cities)
+
+if st.button('Показать вакансии'):
+
+    if selected_city == 'Все города':
+        url = f'{BASE_URL}/jobs'
+    else:
+        url = f'{BASE_URL}/jobs?city={selected_city}'
+    
+    res = requests.get(url)
+
+    if res.status_code == 200:
+        st.dataframe(pd.DataFrame(res.json()))
+    else:
+        st.error('Не удалось получить данные')
