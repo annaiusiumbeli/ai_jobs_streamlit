@@ -16,18 +16,21 @@ def home():
 
 
 @app.get('/jobs')
-def get_jobs(city: str = None):
+def get_jobs(city: str = None, limit: int = 10, offset: int = 0):
     conn = get_db_connection()
     try:
         if city:
-            query = 'SELECT * FROM jobs WHERE city = ?'
-            jobs = conn.execute(query, (city,)).fetchall()
+            query = 'SELECT * FROM jobs WHERE city = ? LIMIT ? OFFSET ?'
+            jobs = conn.execute(query, (city, limit, offset)).fetchall()
         else:
-            jobs = conn.execute('SELECT * FROM jobs LIMIT 10').fetchall()
+            query = 'SELECT * FROM jobs LIMIT ? OFFSET ?'
+            jobs = conn.execute(query, (limit, offset)).fetchall()
 
         return [dict(row) for row in jobs]
+    
     finally:
         conn.close()
+
 
 @app.get('/cities')
 def get_cities():
