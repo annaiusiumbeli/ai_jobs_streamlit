@@ -79,13 +79,15 @@ if st.session_state.search_clicked:
             st.write(f'Показаны вакансии {offset + 1} - {offset + len(df)}')
             st.dataframe(df, use_container_width = True)
 
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col1:
-                st.button('Назад', on_click=prev_page, disabled=(st.session_state.page_number == 0))
+            col1, col2, col3 = st.columns([5, 2, 5])
+
             with col2:
-                st.write(f'Страница {st.session_state.page_number + 1} из {total_pages}')
-            with col3:
-                st.button('Вперед', on_click=next_page, disabled=(st.session_state.page_number + 1 >= total_pages))
+                selected_page = st.number_input(f'Страница из {total_pages}', min_value=1, max_value=total_pages, value=st.session_state.page_number + 1)
+                
+                if selected_page != st.session_state.page_number + 1:
+                    st.session_state.page_number = selected_page - 1
+                    st.rerun()
+    
         else:
             st.warning('По вашему запросу ничего не найдено.')
 
