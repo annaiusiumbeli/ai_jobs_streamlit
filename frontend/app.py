@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+import plotly.express as px
 
 
 st.set_page_config(page_title='AI Jobs', layout='wide')
@@ -31,7 +32,7 @@ def reset_page():
 
 
 
-st.title('Моноторинг рынка вакансий в сфере ИИ')
+st.title('Мониторинг рынка вакансий в сфере ИИ')
 
 BASE_URL = 'http://127.0.0.1:8000'
 
@@ -46,13 +47,20 @@ try:
 
         with col_g1:
             st.write('Топ 10 городов по количеству вакансий')
-            city_counts = df_all['city'].value_counts().head(10).sort_values(ascending=False)
-            st.bar_chart(city_counts)
+            city_counts = df_all['city'].value_counts().head(10).reset_index()
+            city_counts.columns=['city', 'count']
+            fig_city = px.bar(city_counts, x='city', y='count',
+                              labels={'city': 'Город', 'count': 'Вакансии'})
+            fig_city.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(l=20, r=20, t=30, b=20), height=400)
+            st.plotly_chart(fig_city, use_container_width=True)
 
         with col_g2:
-            st.write('Средняя зарплата (USD) по категориям')
-            avg_salary = df_all.groupby('job_category')['annual_salary_usd'].mean().sort_values(ascending=False)
-            st.bar_chart(avg_salary)
+            st.write('Средняя годовая зарплата (USD) по категориям')
+            avg_salary = df_all.groupby('job_category')['annual_salary_usd'].mean().sort_values(ascending=False).reset_index()
+            avg_salary.columns = ['job_category', 'salary']
+            fig_salary = px.bar(avg_salary, x='job_category', y='salary', labels={'job_category': 'Категория', 'salary': 'Средняя зарплата'})
+            fig_salary.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(l=20, r=20, t=30, b=20), height=400)
+            st.plotly_chart(fig_salary, use_container_width=True)
         
         st.divider()
 
