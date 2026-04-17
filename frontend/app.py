@@ -68,6 +68,7 @@ if st.session_state.search_clicked:
         result = res.json()
         total_jobs = result['total']
         df = pd.DataFrame(result['items'])
+        df.index = df.index + offset + 1
 
         import math
         total_pages = math.ceil(total_jobs / limit)
