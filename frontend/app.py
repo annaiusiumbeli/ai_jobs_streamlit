@@ -2,8 +2,22 @@ import streamlit as st
 import requests
 import pandas as pd
 
+
+st.set_page_config(page_title='AI Jobs', layout='wide')
+
+
 if 'page_number' not in st.session_state:
     st.session_state.page_number = 0
+
+if 'search_clicked' not in st.session_state:
+    st.session_state.search_clicked = False
+
+
+
+def show_results():
+    st.session_state.search_clicked = True
+    st.session_state.page_number = 0
+
 
 def next_page():
     st.session_state.page_number += 1
@@ -15,10 +29,10 @@ def prev_page():
 def reset_page():
     st.session_state.page_number = 0
 
-st.set_page_config(page_title='AI Jobs')
 
 
 st.title('Моноторинг рынка вакансий в сфере ИИ')
+
 
 BASE_URL = 'http://127.0.0.1:8000'
 
@@ -34,10 +48,14 @@ except:
 
 selected_city = st.selectbox('Выберите город:', cities, on_change=reset_page)
 
-limit = 10
-offset = st.session_state.page_number * limit
 
-if st.button('Показать вакансии'):
+
+st.button('Показать вакансии', on_click=show_results)
+
+if st.session_state.search_clicked:
+    limit = 10
+    offset = st.session_state.page_number * limit
+
 
     if selected_city == 'Все города':
         url = f'{BASE_URL}/jobs?limit={limit}&offset={offset}'
@@ -47,25 +65,29 @@ if st.button('Показать вакансии'):
     res = requests.get(url)
 
     if res.status_code == 200:
-        df = pd.DataFrame(res.json())
+        result = res.json()
+        total_jobs = result['total']
+        df = pd.DataFrame(result['items'])
+
+        import math
+        total_pages = math.ceil(total_jobs / limit)
+
 
         if not df.empty:
-            st.write(f'Показаны вакансии {offset +1} - {offset + len(df)}')
-            st.dataframe(df, use_container_width=True)
+            st.write(f'Найдено вакансий: {total_jobs}')
+            st.write(f'Показаны вакансии {offset + 1} - {offset + len(df)}')
+            st.dataframe(df, use_container_width = True)
 
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns([1, 2, 1])
             with col1:
                 st.button('Назад', on_click=prev_page, disabled=(st.session_state.page_number == 0))
             with col2:
-                st.write(f'Страница {st.session_state.page_number + 1}')
+                st.write(f'Страница {st.session_state.page_number + 1} из {total_pages}')
             with col3:
-                st.button('Вперед', on_click=next_page, disabled=(len(df) < limit))
+                st.button('Вперед', on_click=next_page, disabled=(st.session_state.page_number + 1 >= total_pages))
         else:
-            st.warning('На этой странице больше нет вакансий.')
-            if st.button('Вернуться на первую страницу'):
-                reset_page()
-                st.rerun()
+            st.warning('По вашему запросу ничего не найдено.')
 
     else:
-        st.error('Не удалось получить данные')
+        st.error('Ошибка связи с сервером')
 

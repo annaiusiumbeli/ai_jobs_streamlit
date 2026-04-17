@@ -19,15 +19,27 @@ def home():
 def get_jobs(city: str = None, limit: int = 10, offset: int = 0):
     conn = get_db_connection()
     try:
-        if city:
-            query = 'SELECT * FROM jobs WHERE city = ? LIMIT ? OFFSET ?'
-            jobs = conn.execute(query, (city, limit, offset)).fetchall()
-        else:
-            query = 'SELECT * FROM jobs LIMIT ? OFFSET ?'
-            jobs = conn.execute(query, (limit, offset)).fetchall()
+        count_query = 'SELECT COUNT(*) FROM jobs'
+        params = []
 
-        return [dict(row) for row in jobs]
-    
+        if city:
+            count_query += ' WHERE city = ?'
+            params.append(city)
+        
+        total_count = conn.execute(count_query, params).fetchone()[0]
+
+        query = 'SELECT * FROM jobs'
+
+        if city:
+            query += ' WHERE city = ?'
+
+        query += ' LIMIT ? OFFSET ?'
+
+        jobs_params = params + [limit, offset]
+        jobs = conn.execute(query, jobs_params).fetchall()
+
+        return {'total': total_count, 'items': [dict(row) for row in jobs]}
+                
     finally:
         conn.close()
 
