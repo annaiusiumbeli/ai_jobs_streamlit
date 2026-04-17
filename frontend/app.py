@@ -33,8 +33,38 @@ def reset_page():
 
 st.title('Моноторинг рынка вакансий в сфере ИИ')
 
-
 BASE_URL = 'http://127.0.0.1:8000'
+
+st.subheader('Обзор рынка')
+
+try:
+    analytics_res = requests.get(f'{BASE_URL}/jobs?limit=2000')
+    if analytics_res.status_code == 200:
+        df_all = pd.DataFrame(analytics_res.json()['items'])
+
+        col_g1, col_g2 = st.columns(2)
+
+        with col_g1:
+            st.write('Топ 10 городов по количеству вакансий')
+            city_counts = df_all['city'].value_counts().head(10).sort_values(ascending=False)
+            st.bar_chart(city_counts)
+
+        with col_g2:
+            st.write('Средняя зарплата (USD) по категориям')
+            avg_salary = df_all.groupby('job_category')['annual_salary_usd'].mean().sort_values(ascending=False)
+            st.bar_chart(avg_salary)
+        
+        st.divider()
+
+    else:
+        st.info('Данные для аналитики не найдены')
+
+except Exception as e:
+    st.error(f'Ошибка загрузки аналитики: {e}')        
+
+
+
+
 
 try:
     response = requests.get(f'{BASE_URL}/cities')
