@@ -115,7 +115,14 @@ if st.session_state.search_clicked:
         if not df.empty:
             st.write(f'Найдено вакансий: {total_jobs}')
             st.write(f'Показаны вакансии {offset + 1} - {offset + len(df)}')
-            st.dataframe(df, use_container_width = True)
+            
+            display_cols = ['job_title', 'job_category', 'city', 'country', 'annual_salary_usd', 'monthly_cost', 'monthly_savings']
+            
+            rename_cols = {'job_title': 'Job Title', 'job_category': 'Category', 'city': 'City', 'country': 'Country', 'annual_salary_usd': 'Annual salary ($)', 'monthly_cost': 'Monthly Living + Rent Cost ($) =', 'monthly_savings': 'Monthly Savings'}
+            
+            display_df = df[display_cols].rename(columns=rename_cols)
+            
+            st.dataframe(display_df, use_container_width = True)
 
             col1, col2, col3 = st.columns([5, 2, 5])
 
