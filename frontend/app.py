@@ -89,6 +89,15 @@ with st.sidebar:
 if page == 'Аналитика':
     st.title('Анализ рынка вакансий в сфере ИИ')
 
+
+    if 'db_stats' in locals() and db_stats:
+        m1, m2, m3 = st.columns(3)
+        m1.metric('Всего вакансий', f'{db_stats['total_cnt']:,}')
+        m2.metric('Средняя зарплата за год', f'${db_stats['avg_salary']:,}')
+        m3.metric('Maкс. предложение', f'${db_stats['max_salary']:,}')
+        st.divider()
+
+
     try:
         analytics_res = requests.get(f'{BASE_URL}/jobs?limit=2000')
         if analytics_res.status_code == 200:
@@ -114,6 +123,15 @@ if page == 'Аналитика':
                 st.plotly_chart(fig_salary, use_container_width=True)
             
             st.divider()
+
+
+            st.write('Структура рынка по категориям')
+            df_category = df_all['job_category'].value_counts().reset_index()
+            df_category.columns = ['Категория', 'Количество']
+
+            category_pie = px.pie(df_category, values='Количество', names='Категория', )
+            st.plotly_chart(category_pie)
+
 
         else:
             st.info('Данные для аналитики не найдены')
