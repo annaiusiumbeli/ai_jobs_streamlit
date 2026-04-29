@@ -90,18 +90,40 @@ if page == 'Аналитика':
     st.title('Анализ рынка вакансий в сфере ИИ')
 
 
-    if 'db_stats' in locals() and db_stats:
-        m1, m2, m3 = st.columns(3)
-        m1.metric('Всего вакансий', f'{db_stats['total_cnt']:,}')
-        m2.metric('Средняя зарплата за год', f'${db_stats['avg_salary']:,}')
-        m3.metric('Maкс. предложение', f'${db_stats['max_salary']:,}')
-        st.divider()
 
 
     try:
         analytics_res = requests.get(f'{BASE_URL}/jobs?limit=2000')
         if analytics_res.status_code == 200:
             df_all = pd.DataFrame(analytics_res.json()['items'])
+
+
+            if 'db_stats' in locals() and db_stats:
+
+                col_1_top, col_2_top = st.columns([2, 3])
+
+                with col_1_top:
+
+                    st.metric('Всего вакансий', f'{db_stats["total_cnt"]:,}')
+                    st.write('')
+                    st.write('')
+                    st.write('')
+                    st.metric('Средняя зарплата за год', f'${db_stats["avg_salary"]:,}')
+                    st.write('')
+                    st.write('')
+                    st.write('')
+                    st.metric('Maкс. предложение', f'${db_stats["max_salary"]:,}')
+                    
+                with col_2_top:
+                    st.write('Доля вакансий по категориям')
+                    df_category = df_all['job_category'].value_counts().reset_index()
+                    df_category.columns = ['Категория', 'Количество']
+
+                    category_pie = px.pie(df_category, values='Количество', names='Категория', hole=0.5)
+                    category_pie.update_layout(margin=dict(t=20, b=20, l=0, r=0), height=350)
+                    st.plotly_chart(category_pie)
+
+            st.divider()
 
             col_g1, col_g2 = st.columns(2)
 
@@ -125,12 +147,7 @@ if page == 'Аналитика':
             st.divider()
 
 
-            st.write('Структура рынка по категориям')
-            df_category = df_all['job_category'].value_counts().reset_index()
-            df_category.columns = ['Категория', 'Количество']
 
-            category_pie = px.pie(df_category, values='Количество', names='Категория', )
-            st.plotly_chart(category_pie)
 
 
         else:
