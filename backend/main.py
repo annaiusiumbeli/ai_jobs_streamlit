@@ -16,7 +16,7 @@ def home():
 
 
 @app.get('/jobs')
-def get_jobs(city: str = None, min_salary: int = 0, limit: int = 10, offset: int = 0):
+def get_jobs(city: str = None, category: str = None, min_salary: int = 0, limit: int = 10, offset: int = 0):
     conn = get_db_connection()
     try:
         print('Проверка соединения')
@@ -26,6 +26,11 @@ def get_jobs(city: str = None, min_salary: int = 0, limit: int = 10, offset: int
         if city:
             count_query += ' AND city = ?'
             params.append(city)
+
+
+        if category:
+            count_query += ' AND job_category = ?'
+            params.append(category)
 
         
         if min_salary > 0:
@@ -52,6 +57,12 @@ def get_jobs(city: str = None, min_salary: int = 0, limit: int = 10, offset: int
         if city:
             query += ' AND j.city = ?'
             final_params.append(city)
+
+
+        if category:
+            query += ' AND j.job_category = ?'
+            final_params.append(category)
+
 
         if min_salary > 0:
             query += ' AND j.annual_salary_usd >= ?'
@@ -83,6 +94,20 @@ def get_cities():
 
 
 
+
+@app.get('/categories')
+def get_categories():
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute('SELECT DISTINCT job_category FROM jobs ORDER BY job_category')
+        return [row['job_category'] for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
+
+
+
 @app.get('/stats')
 def get_stats():
     conn = get_db_connection()
@@ -91,3 +116,5 @@ def get_stats():
         return dict(res)
     finally:
         conn.close()
+
+

@@ -101,12 +101,29 @@ except:
 
 
 
-filter_1, filter_2, button, col4 = st.columns([2, 2, 1, 4])
+try:
+    res_cat = requests.get(f'{BASE_URL}/categories')
+    if res_cat.status_code == 200:
+        categories = ['Все категории'] + res_cat.json()
+    else:
+        categories = ['Все категории']
+except:
+    categories = ['Все категории']
+
+
+
+
+
+
+filter_1, filter_2, filter_3, button, col4 = st.columns([2, 2, 2, 1, 5])
 
 with filter_1:
     selected_city = st.selectbox('Выберите город:', cities, on_change=reset_page)
 
 with filter_2:
+    selected_category = st.selectbox('Категория:', categories, on_change=reset_page)
+
+with filter_3:
     min_salary = st.slider('Мин. зп в год ($):', min_value=0, max_value=max_salary_limit, value=0, step=5000)
 
 with button:
@@ -114,6 +131,7 @@ with button:
 
 with col4:
     pass
+
 
 
 
@@ -126,7 +144,11 @@ if st.session_state.search_clicked:
 
     if selected_city != 'Все города':
         url += f'&city={selected_city}'
-    
+
+    if selected_category != 'Все категории':
+        url += f'&category={selected_category}'
+
+
     res = requests.get(url)
 
     if res.status_code == 200:
