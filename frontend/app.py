@@ -104,15 +104,15 @@ if page == 'Аналитика':
 
                 with col_1_top:
 
-                    st.metric('Всего вакансий', f'{db_stats["total_cnt"]:,}')
+                    st.metric('Всего вакансий', f'{db_stats.get("total_cnt", 0):,}')
                     st.write('')
                     st.write('')
                     st.write('')
-                    st.metric('Средняя зарплата за год', f'${db_stats["avg_salary"]:,}')
+                    st.metric('Средняя зарплата за год', f'${int(db_stats.get("avg_salary", 0)):,}')
                     st.write('')
                     st.write('')
                     st.write('')
-                    st.metric('Maкс. предложение', f'${db_stats["max_salary"]:,}')
+                    st.metric('Maкс. предложение', f'${int(db_stats.get("max_salary", 0)):,}')
                     
                 with col_2_top:
                     st.write('Доля вакансий по категориям')
