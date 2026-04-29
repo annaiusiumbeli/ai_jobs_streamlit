@@ -6,6 +6,8 @@ import plotly.express as px
 
 st.set_page_config(page_title='AI Jobs', layout='wide')
 
+BASE_URL = 'http://127.0.0.1:8000'
+
 
 if 'page_number' not in st.session_state:
     st.session_state.page_number = 0
@@ -32,9 +34,21 @@ def reset_page():
 
 
 
+try:
+    stats_res = requests.get(f'{BASE_URL}/stats')
+    if stats_res.status_code == 200:
+        db_stats = stats_res.json()
+        max_salary_limit = int(db_stats['max_salary'])
+    else:
+        max_salary_limit = 500000
+except:
+    max_salary_limit = 500000
+
+
+
+
 st.title('Мониторинг рынка вакансий в сфере ИИ')
 
-BASE_URL = 'http://127.0.0.1:8000'
 
 st.subheader('Обзор рынка')
 
@@ -84,21 +98,34 @@ except:
     cities = ['Все города']
 
 
-selected_city = st.selectbox('Выберите город:', cities, on_change=reset_page)
 
 
 
-st.button('Показать вакансии', on_click=show_results)
+filter_1, filter_2, button, col4 = st.columns([2, 2, 1, 4])
+
+with filter_1:
+    selected_city = st.selectbox('Выберите город:', cities, on_change=reset_page)
+
+with filter_2:
+    min_salary = st.slider('Мин. зп в год ($):', min_value=0, max_value=max_salary_limit, value=0, step=5000)
+
+with button:
+    st.button('Показать вакансии', on_click=show_results)
+
+with col4:
+    pass
+
+
+
 
 if st.session_state.search_clicked:
     limit = 10
     offset = st.session_state.page_number * limit
 
+    url = f'{BASE_URL}/jobs?limit={limit}&offset={offset}&min_salary={min_salary}'
 
-    if selected_city == 'Все города':
-        url = f'{BASE_URL}/jobs?limit={limit}&offset={offset}'
-    else:
-        url = f'{BASE_URL}/jobs?city={selected_city}&limit={limit}&offset={offset}'
+    if selected_city != 'Все города':
+        url += f'&city={selected_city}'
     
     res = requests.get(url)
 
@@ -118,7 +145,7 @@ if st.session_state.search_clicked:
             
             display_cols = ['job_title', 'job_category', 'city', 'country', 'annual_salary_usd', 'monthly_cost', 'monthly_savings']
             
-            rename_cols = {'job_title': 'Job Title', 'job_category': 'Category', 'city': 'City', 'country': 'Country', 'annual_salary_usd': 'Annual salary ($)', 'monthly_cost': 'Monthly Living + Rent Cost ($) =', 'monthly_savings': 'Monthly Savings'}
+            rename_cols = {'job_title': 'Job Title', 'job_category': 'Category', 'city': 'City', 'country': 'Country', 'annual_salary_usd': 'Annual salary ($)', 'monthly_cost': 'Monthly Living + Rent Cost ($)', 'monthly_savings': 'Monthly Savings ($)'}
             
             display_df = df[display_cols].rename(columns=rename_cols)
             
