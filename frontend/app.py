@@ -101,31 +101,46 @@ if page == 'Аналитика':
     st.title('Анализ рынка вакансий в сфере ИИ')
 
     if not df_all.empty:
-    
-        if 'db_stats' in locals() and db_stats:
 
-            col_1_top, col_2_top = st.columns([2, 3])
+        available_years = sorted(df_all['posting_year'].unique().tolist())
+        
+        radio_options = ['Все'] + available_years
 
-            with col_1_top:
+        selected_year = st.radio('Год:', options=radio_options, horizontal=True)
 
-                st.metric('Всего вакансий', f'{db_stats.get("total_cnt", 0):,}')
-                st.write('')
-                st.write('')
-                st.write('')
-                st.metric('Средняя зарплата за год', f'${int(db_stats.get("avg_salary", 0)):,}')
-                st.write('')
-                st.write('')
-                st.write('')
-                st.metric('Maкс. предложение', f'${int(db_stats.get("max_salary", 0)):,}')
-                
-            with col_2_top:
-                st.write('Доля вакансий по категориям')
-                df_category = df_all['job_category'].value_counts().reset_index()
-                df_category.columns = ['Категория', 'Количество']
+        if selected_year == 'Все':
+            df_filtered = df_all
+        
+        else:
+            df_filtered = df_all[df_all['posting_year'] == selected_year]
 
-                category_pie = px.pie(df_category, values='Количество', names='Категория', hole=0.5)
-                category_pie.update_layout(margin=dict(t=20, b=20, l=0, r=0), height=350)
-                st.plotly_chart(category_pie)
+        col_1_top, col_2_top = st.columns([2, 3])
+
+        with col_1_top:
+
+            total_cnt = len(df_filtered)
+            avg_sal = int(df_filtered['annual_salary_usd'].mean()) if total_cnt > 0 else 0
+            max_sal = int(df_filtered['annual_salary_usd'].max()) if total_cnt > 0 else 0
+
+
+            st.metric('Всего вакансий', f'{total_cnt:,}')
+            st.write('')
+            st.write('')
+            st.write('')
+            st.metric('Средняя зарплата за год', f'${avg_sal:,}')
+            st.write('')
+            st.write('')
+            st.write('')
+            st.metric('Maкс. предложение', f'${max_sal:,}')
+            
+        with col_2_top:
+            st.write('Доля вакансий по категориям')
+            df_category = df_filtered['job_category'].value_counts().reset_index()
+            df_category.columns = ['Категория', 'Количество']
+
+            category_pie = px.pie(df_category, values='Количество', names='Категория', hole=0.5)
+            category_pie.update_layout(margin=dict(t=20, b=20, l=0, r=0), height=350)
+            st.plotly_chart(category_pie)
 
         st.divider()
 
@@ -133,7 +148,7 @@ if page == 'Аналитика':
 
         with col_g1:
             st.write('Топ 10 городов по количеству вакансий')
-            city_counts = df_all['city'].value_counts().head(10).reset_index()
+            city_counts = df_filtered['city'].value_counts().head(10).reset_index()
             city_counts.columns=['city', 'count']
             fig_city = px.bar(city_counts, x='city', y='count',
                             labels={'city': 'Город', 'count': 'Вакансии'})
@@ -142,7 +157,7 @@ if page == 'Аналитика':
 
         with col_g2:
             st.write('Средняя годовая зарплата (USD) по категориям')
-            avg_salary = df_all.groupby('job_category')['annual_salary_usd'].mean().sort_values(ascending=False).reset_index()
+            avg_salary = df_filtered.groupby('job_category')['annual_salary_usd'].mean().sort_values(ascending=False).reset_index()
             avg_salary.columns = ['job_category', 'salary']
             fig_salary = px.bar(avg_salary, x='job_category', y='salary', labels={'job_category': 'Категория', 'salary': 'Средняя зарплата'})
             fig_salary.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(l=20, r=20, t=30, b=20), height=400)
@@ -183,6 +198,7 @@ elif page == 'Поиск вакансий':
         selected_years = st.multiselect('Годы:', years)
 
     with button:
+        st.write('')
         st.button('Показать вакансии', on_click=show_results)
 
     with col5:
