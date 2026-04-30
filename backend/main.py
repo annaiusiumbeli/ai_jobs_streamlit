@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 import sqlite3
 import os
 
@@ -16,7 +16,12 @@ def home():
 
 
 @app.get('/jobs')
-def get_jobs(city: str = None, category: str = None, min_salary: int = 0, limit: int = 10, offset: int = 0):
+def get_jobs(city: str = None, 
+             category: str = None, 
+             min_salary: int = 0,
+             years: list[int] = Query(None), 
+             limit: int = 10, 
+             offset: int = 0):
     conn = get_db_connection()
     try:
         print('Проверка соединения')
@@ -36,7 +41,11 @@ def get_jobs(city: str = None, category: str = None, min_salary: int = 0, limit:
         if min_salary > 0:
             count_query += ' AND annual_salary_usd >= ?'
             params.append(min_salary)
-        
+
+        if years:
+           placeholders = ', '.join(['?'] * len(years))
+           count_query += f' AND posting_year IN ({placeholders})'
+           params.extend(years) 
 
 
         res = conn.execute(count_query, params).fetchone()
@@ -67,6 +76,12 @@ def get_jobs(city: str = None, category: str = None, min_salary: int = 0, limit:
         if min_salary > 0:
             query += ' AND j.annual_salary_usd >= ?'
             final_params.append(min_salary)
+        
+        if years:
+            placeholders = ', '.join(['?'] * len(years))
+            query += f' AND j.posting_year IN ({placeholders})'
+            final_params.extend(years) 
+
 
         query += ' LIMIT ? OFFSET ?'
         final_params.extend([limit, offset])

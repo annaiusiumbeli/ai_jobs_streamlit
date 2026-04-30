@@ -11,6 +11,17 @@ BASE_URL = 'http://127.0.0.1:8000'
 
 
 try:
+    all_jobs = requests.get(f'{BASE_URL}/jobs?limit=2000')
+    if all_jobs.status_code == 200:
+        df_all = pd.DataFrame(all_jobs.json()['items'])
+    else:
+        df_all = pd.DataFrame()
+except:
+    df_all = pd.DataFrame()
+
+
+
+try:
     stats_res = requests.get(f'{BASE_URL}/stats')
     if stats_res.status_code == 200:
         db_stats = stats_res.json()
@@ -89,72 +100,59 @@ with st.sidebar:
 if page == 'Аналитика':
     st.title('Анализ рынка вакансий в сфере ИИ')
 
+    if not df_all.empty:
+    
+        if 'db_stats' in locals() and db_stats:
+
+            col_1_top, col_2_top = st.columns([2, 3])
+
+            with col_1_top:
+
+                st.metric('Всего вакансий', f'{db_stats.get("total_cnt", 0):,}')
+                st.write('')
+                st.write('')
+                st.write('')
+                st.metric('Средняя зарплата за год', f'${int(db_stats.get("avg_salary", 0)):,}')
+                st.write('')
+                st.write('')
+                st.write('')
+                st.metric('Maкс. предложение', f'${int(db_stats.get("max_salary", 0)):,}')
+                
+            with col_2_top:
+                st.write('Доля вакансий по категориям')
+                df_category = df_all['job_category'].value_counts().reset_index()
+                df_category.columns = ['Категория', 'Количество']
+
+                category_pie = px.pie(df_category, values='Количество', names='Категория', hole=0.5)
+                category_pie.update_layout(margin=dict(t=20, b=20, l=0, r=0), height=350)
+                st.plotly_chart(category_pie)
+
+        st.divider()
+
+        col_g1, col_g2 = st.columns(2)
+
+        with col_g1:
+            st.write('Топ 10 городов по количеству вакансий')
+            city_counts = df_all['city'].value_counts().head(10).reset_index()
+            city_counts.columns=['city', 'count']
+            fig_city = px.bar(city_counts, x='city', y='count',
+                            labels={'city': 'Город', 'count': 'Вакансии'})
+            fig_city.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(l=20, r=20, t=30, b=20), height=400)
+            st.plotly_chart(fig_city, use_container_width=True)
+
+        with col_g2:
+            st.write('Средняя годовая зарплата (USD) по категориям')
+            avg_salary = df_all.groupby('job_category')['annual_salary_usd'].mean().sort_values(ascending=False).reset_index()
+            avg_salary.columns = ['job_category', 'salary']
+            fig_salary = px.bar(avg_salary, x='job_category', y='salary', labels={'job_category': 'Категория', 'salary': 'Средняя зарплата'})
+            fig_salary.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(l=20, r=20, t=30, b=20), height=400)
+            st.plotly_chart(fig_salary, use_container_width=True)
+        
+        st.divider()
 
 
-
-    try:
-        analytics_res = requests.get(f'{BASE_URL}/jobs?limit=2000')
-        if analytics_res.status_code == 200:
-            df_all = pd.DataFrame(analytics_res.json()['items'])
-
-
-            if 'db_stats' in locals() and db_stats:
-
-                col_1_top, col_2_top = st.columns([2, 3])
-
-                with col_1_top:
-
-                    st.metric('Всего вакансий', f'{db_stats.get("total_cnt", 0):,}')
-                    st.write('')
-                    st.write('')
-                    st.write('')
-                    st.metric('Средняя зарплата за год', f'${int(db_stats.get("avg_salary", 0)):,}')
-                    st.write('')
-                    st.write('')
-                    st.write('')
-                    st.metric('Maкс. предложение', f'${int(db_stats.get("max_salary", 0)):,}')
-                    
-                with col_2_top:
-                    st.write('Доля вакансий по категориям')
-                    df_category = df_all['job_category'].value_counts().reset_index()
-                    df_category.columns = ['Категория', 'Количество']
-
-                    category_pie = px.pie(df_category, values='Количество', names='Категория', hole=0.5)
-                    category_pie.update_layout(margin=dict(t=20, b=20, l=0, r=0), height=350)
-                    st.plotly_chart(category_pie)
-
-            st.divider()
-
-            col_g1, col_g2 = st.columns(2)
-
-            with col_g1:
-                st.write('Топ 10 городов по количеству вакансий')
-                city_counts = df_all['city'].value_counts().head(10).reset_index()
-                city_counts.columns=['city', 'count']
-                fig_city = px.bar(city_counts, x='city', y='count',
-                                labels={'city': 'Город', 'count': 'Вакансии'})
-                fig_city.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(l=20, r=20, t=30, b=20), height=400)
-                st.plotly_chart(fig_city, use_container_width=True)
-
-            with col_g2:
-                st.write('Средняя годовая зарплата (USD) по категориям')
-                avg_salary = df_all.groupby('job_category')['annual_salary_usd'].mean().sort_values(ascending=False).reset_index()
-                avg_salary.columns = ['job_category', 'salary']
-                fig_salary = px.bar(avg_salary, x='job_category', y='salary', labels={'job_category': 'Категория', 'salary': 'Средняя зарплата'})
-                fig_salary.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(l=20, r=20, t=30, b=20), height=400)
-                st.plotly_chart(fig_salary, use_container_width=True)
-            
-            st.divider()
-
-
-
-
-
-        else:
-            st.info('Данные для аналитики не найдены')
-
-    except Exception as e:
-        st.error(f'Ошибка загрузки аналитики: {e}')       
+    else:
+        st.error(f'Ошибка загрузки аналитики: {e}')
 
 
 
@@ -167,8 +165,10 @@ if page == 'Аналитика':
 elif page == 'Поиск вакансий':
     st.title('Поиск вакансий в сфере ИИ')
 
+    years = sorted(df_all['posting_year'].unique().tolist())
 
-    filter_1, filter_2, filter_3, button, col4 = st.columns([2, 2, 2, 2, 4])
+
+    filter_1, filter_2, filter_3, filter_4, button, col5 = st.columns([2, 2, 2, 2.5, 2, 2])
 
     with filter_1:
         selected_city = st.selectbox('Выберите город:', cities, on_change=reset_page)
@@ -179,10 +179,13 @@ elif page == 'Поиск вакансий':
     with filter_3:
         min_salary = st.slider('Мин. зп в год ($):', min_value=0, max_value=max_salary_limit, value=0, step=5000)
 
+    with filter_4:
+        selected_years = st.multiselect('Годы:', years)
+
     with button:
         st.button('Показать вакансии', on_click=show_results)
 
-    with col4:
+    with col5:
         pass
 
 
@@ -201,6 +204,10 @@ elif page == 'Поиск вакансий':
         if selected_category != 'Все категории':
             url += f'&category={selected_category}'
 
+        if selected_years:
+            for y in selected_years:
+                url += f'&years={y}'
+
 
         res = requests.get(url)
 
@@ -218,9 +225,9 @@ elif page == 'Поиск вакансий':
                 st.write(f'Найдено вакансий: {total_jobs}')
                 st.write(f'Показаны вакансии {offset + 1} - {offset + len(df)}')
                 
-                display_cols = ['job_title', 'job_category', 'city', 'country', 'annual_salary_usd', 'monthly_cost', 'monthly_savings']
+                display_cols = ['job_title', 'job_category', 'posting_year', 'city', 'country', 'annual_salary_usd', 'monthly_cost', 'monthly_savings']
                 
-                rename_cols = {'job_title': 'Job Title', 'job_category': 'Category', 'city': 'City', 'country': 'Country', 'annual_salary_usd': 'Annual salary ($)', 'monthly_cost': 'Monthly Living + Rent Cost ($)', 'monthly_savings': 'Monthly Savings ($)'}
+                rename_cols = {'job_title': 'Job Title', 'job_category': 'Category', 'posting_year': 'Year', 'city': 'City', 'country': 'Country', 'annual_salary_usd': 'Annual salary ($)', 'monthly_cost': 'Monthly Living + Rent Cost ($)', 'monthly_savings': 'Monthly Savings ($)'}
                 
                 display_df = df[display_cols].rename(columns=rename_cols)
                 
