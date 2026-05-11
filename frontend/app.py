@@ -9,53 +9,68 @@ st.set_page_config(page_title='AI Jobs', layout='wide')
 BASE_URL = 'http://127.0.0.1:8000'
 
 
+@st.cache_data(ttl=600)
+def load_all_jobs(url):
+    try:
+        res = requests.get(url)
+        if res.status_code == 200:
+            return pd.DataFrame(res.json()['items'])
+    except:
+        pass
+    return pd.DataFrame()
 
-try:
-    all_jobs = requests.get(f'{BASE_URL}/jobs?limit=2000')
-    if all_jobs.status_code == 200:
-        df_all = pd.DataFrame(all_jobs.json()['items'])
-    else:
-        df_all = pd.DataFrame()
-except:
-    df_all = pd.DataFrame()
+
+
+@st.cache_data(ttl=600)
+def load_stats(url):
+    try:
+        res = requests.get(url)
+        if res.status_code == 200:
+            return res.json()
+    except:
+        pass
+    return None
+
+
+@st.cache_data(ttl=600)
+def load_cities(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return ['Все города'] + response.json()
+    except:
+        pass
+    return ['Все города']
 
 
 
-try:
-    stats_res = requests.get(f'{BASE_URL}/stats')
-    if stats_res.status_code == 200:
-        db_stats = stats_res.json()
-        max_salary_limit = int(db_stats['max_salary'])
-    else:
-        max_salary_limit = 500000
-except:
+@st.cache_data(ttl=600)
+def load_categories(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return ['Все категории'] + response.json()
+    except:
+        pass
+    return ['Все категории']
+
+
+
+
+df_all = load_all_jobs(f'{BASE_URL}/jobs?limit=2000')
+db_stats = load_stats(f'{BASE_URL}/stats')
+cities = load_cities(f'{BASE_URL}/cities')
+categories = load_categories(f'{BASE_URL}/categories')
+
+
+
+if db_stats:
+    max_salary_limit = int(db_stats.get('max_salary', 500000))
+else:
     max_salary_limit = 500000
 
 
 
-
-
-try:
-    response = requests.get(f'{BASE_URL}/cities')
-    if response.status_code == 200:
-        cities = ['Все города'] + response.json()
-    else:
-        cities = ['Все города']
-except:
-    cities = ['Все города']
-
-
-
-
-
-try:
-    res_cat = requests.get(f'{BASE_URL}/categories')
-    if res_cat.status_code == 200:
-        categories = ['Все категории'] + res_cat.json()
-    else:
-        categories = ['Все категории']
-except:
-    categories = ['Все категории']
 
 
 
