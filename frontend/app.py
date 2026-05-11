@@ -84,6 +84,12 @@ if 'search_clicked' not in st.session_state:
 
 
 
+if 'year_key' not in st.session_state:
+    st.session_state.year_key = 'Все'
+
+
+
+
 def show_results():
     st.session_state.search_clicked = True
     st.session_state.page_number = 0
@@ -121,13 +127,24 @@ if page == 'Аналитика':
         
         radio_options = ['Все'] + available_years
 
-        selected_year = st.radio('Год:', options=radio_options, horizontal=True)
 
-        if selected_year == 'Все':
+        try:
+            curr_index = radio_options.index(st.session_state.get('year_key', 'Все'))
+
+        except:
+            curr_index = 0
+        
+
+        st.session_state.year_key = st.radio('Год:', options=radio_options, horizontal=True, index=curr_index)
+
+
+        if st.session_state.year_key == 'Все':
             df_filtered = df_all
         
         else:
-            df_filtered = df_all[df_all['posting_year'] == selected_year]
+            df_filtered = df_all[df_all['posting_year'] == st.session_state.year_key]
+
+
 
         col_1_top, col_2_top = st.columns([2, 3])
 
