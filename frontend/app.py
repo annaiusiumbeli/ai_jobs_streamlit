@@ -88,6 +88,18 @@ if 'year_key' not in st.session_state:
     st.session_state.year_key = 'Все'
 
 
+if 'search_city_key' not in st.session_state:
+    st.session_state.search_city_key = 'Все категории'
+
+if 'search_salary_key' not in st.session_state:
+    st.session_state.search_salary_key = 0
+
+
+if 'search_years_key' not in st.session_state:
+    st.session_state.search_years_key = []
+
+
+
 
 
 def show_results():
@@ -217,21 +229,54 @@ elif page == 'Поиск вакансий':
 
     filter_1, filter_2, filter_3, filter_4, button, col5 = st.columns([2, 2, 2, 2.5, 2, 2])
 
+
     with filter_1:
-        selected_city = st.selectbox('Выберите город:', cities, on_change=reset_page)
+
+        try:
+            city_index = cities.index(st.session_state.get('search_city_key', 'Все города'))
+        except:
+            city_index = 0
+    
+        st.session_state.search_city_key = st.selectbox('Город:', cities, on_change=reset_page, index=city_index)
+
+        selected_city = st.session_state.search_city_key
+
+
 
     with filter_2:
-        selected_category = st.selectbox('Категория:', categories, on_change=reset_page)
+
+        try:
+            category_index = categories.index(st.session_state.get('search_category_key', 'Все категории'))
+        except:
+            category_index = 0
+        
+        st.session_state.search_category_key = st.selectbox('Категория:', categories, on_change=reset_page, index=category_index)
+
+        selected_category = st.session_state.search_category_key
+
+
 
     with filter_3:
-        min_salary = st.slider('Мин. зп в год ($):', min_value=0, max_value=max_salary_limit, value=0, step=5000)
+
+        st.session_state.search_salary_key = st.slider('Мин. зп в год ($):', min_value=0, max_value=max_salary_limit, value=st.session_state.get('search_salary_key'), step=5000)
+
+        min_salary = st.session_state.search_salary_key
+
+
 
     with filter_4:
-        selected_years = st.multiselect('Годы:', years)
+
+        st.session_state.search_years_key = st.multiselect('Годы:', years, default=st.session_state.get('search_years_key', years))
+
+        selected_years = st.session_state.search_years_key
+
+
 
     with button:
         st.write('')
         st.button('Показать вакансии', on_click=show_results)
+
+
 
     with col5:
         pass
